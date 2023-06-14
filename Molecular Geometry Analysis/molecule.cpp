@@ -1,9 +1,10 @@
-#include "molecule.h" // Use molecule class
+#include "molecule.hpp" // Use molecule class
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <cstdio>
 #include <cassert>
+#include <cmath>
 
 // Function to print geometry (cartesian coordinates)
 void Molecule::print_geometry(){
@@ -14,11 +15,36 @@ void Molecule::print_geometry(){
     }      
 }
 
-// 
+// Function to calculate bond lengths (Assume bonds are present between all molecules)
+double Molecule::bond(int i, int j){
+
+    // Calculate distance according to formula
+    double distance = sqrt(pow(geometry[i][0] - geometry[j][0], 2) +
+                           pow(geometry[i][1] - geometry[j][1], 2) +
+                           pow(geometry[i][2] - geometry[j][2], 2));
+
+    return distance;
+}
+
+// Calculate unit vector 
+double Molecule::unit_vector(int col, int p, int q) {
+    return -(geometry[p][col] - geometry[q][col]) / bond(p,q);
+}
+
+// Calculate angle in degrees
+double Molecule::bond_angle(int i, int j, int k) {
+    double dot_product = (unit_vector(0, i, j) * unit_vector(0, k, j)) +
+                         (unit_vector(1, i, j) * unit_vector(1, k, j)) +
+                         (unit_vector(2, i, j) * unit_vector(2, k, j));
+    
+    return (180 / acos(-1.0)) * acos(dot_product); 
+}
+
+// Constructor
 Molecule::Molecule(const char *filename) { 
 
     // Open file and check for success
-    ifstream input(filename);
+    ifstream input(filename); 
     assert(input.good());
 
     // Read first line (number of atoms)
@@ -39,6 +65,7 @@ Molecule::Molecule(const char *filename) {
     input.close();
 }
 
+// Destructor
 Molecule::~Molecule(){
 
     // Deallocate memory
