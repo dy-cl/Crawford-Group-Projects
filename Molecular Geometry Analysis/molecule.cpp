@@ -28,16 +28,51 @@ double Molecule::bond(int i, int j){
 
 // Calculate unit vector 
 double Molecule::unit_vector(int col, int p, int q) {
+    // 0 = x, 1 = y, 2 = z
     return -(geometry[p][col] - geometry[q][col]) / bond(p,q);
 }
 
-// Calculate angle in degrees
+// Calculate cross product
+tuple<double, double, double> Molecule::cross_product(int a, int b, int c) {
+    double cross_x = (unit_vector(1, b, a) * unit_vector(2, b, c)) - (unit_vector(2, b, a) * unit_vector(1, b, c));
+    double cross_y = (unit_vector(2, b, a) * unit_vector(0, b, c)) - (unit_vector(0, b, a) * unit_vector(2, b, c));
+    double cross_z = (unit_vector(0, b, a) * unit_vector(1, b, c)) - (unit_vector(1, b, a) * unit_vector(0, b, c));
+
+    // cout << cross_x << " " << cross_y << " " << cross_z << "\n";
+
+    // Return tuple
+    return make_tuple(cross_x, cross_y, cross_z);
+}
+
+// Calculate bond angle in degrees
 double Molecule::bond_angle(int i, int j, int k) {
-    double dot_product = (unit_vector(0, i, j) * unit_vector(0, k, j)) +
-                         (unit_vector(1, i, j) * unit_vector(1, k, j)) +
-                         (unit_vector(2, i, j) * unit_vector(2, k, j));
+
+    double dot_product = (unit_vector(0, i, j) * unit_vector(0, k, j)) + // eXij * eXjk
+                         (unit_vector(1, i, j) * unit_vector(1, k, j)) + // eYij * eYjk
+                         (unit_vector(2, i, j) * unit_vector(2, k, j));  // eZij * eZjk
     
     return (180 / acos(-1.0)) * acos(dot_product); 
+}
+
+// Calculate out of plane angle in degrees
+double Molecule::ooPlane_angle(int i, int j, int k, int l) {
+    
+    double eXjkl, eYjkl, eZjkl;
+
+    // Get X, Y, Z components of cross product
+    tie(eXjkl, eYjkl, eZjkl) = cross_product(j, k, l);
+
+    // cout << eXjkl << " " << eYjkl << " " << eZjkl << "\n"; // Values are correctly assigned
+
+    // Calculate dot product with eki
+    double eX = eXjkl * unit_vector(0, k, i);
+    double eY = eYjkl * unit_vector(1, k, i);
+    double eZ = eZjkl * unit_vector(2, k, i);
+    
+    // Calculate sin of angle
+    double sin_theta = (eX + eY + eZ) / sqrt(eXjkl * eXjkl + eYjkl * eYjkl + eZjkl * eZjkl);
+
+    return (180 / acos(-1.0)) * asin(sin_theta);
 }
 
 // Constructor
@@ -71,7 +106,6 @@ Molecule::~Molecule(){
     // Deallocate memory
     delete[] atom;
     
-
     for (int i = 0; i < num_atoms; i++) {
         delete[] geometry[i];
     }
