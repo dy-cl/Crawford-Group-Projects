@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
             }
         }
     }
-    cout << "Out of plane angles \n";
+    cout << "Out of plane angles: \n";
 
     // Print Out of Plane angles
     for(int i = 0; i < mol.num_atoms; i++) {
@@ -51,5 +51,20 @@ int main(int argc, char *argv[]){
             }
         }
     }
+    cout << "Torsional angles: \n";
+
+    // Print torsional angles
+    for(int i = 0; i < mol.num_atoms; i++) {
+        for(int j = 0; j < i; j++) {
+            for(int k = 0; k < j; k++) {
+                for(int l = 0; l < k; l++) {
+                    if(i!=j && i!=k && i!=l && j!=k && k!=l && mol.bond(i,j) < 4.0 && mol.bond(j,k) < 4.0 && mol.bond(k,l) < 4.0)
+                        printf("%2d-%2d-%2d-%2d %10.6f\n", i, j, k, l, mol.torsion_angle(i,j,k,l));
+                }
+            }
+        }
+    }
+    
+    
     return 0;
 } 

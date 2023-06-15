@@ -18,6 +18,7 @@ class Molecule
         tuple<double, double, double> cross_product(int atom1, int atom2, int atom3);
         double bond_angle(int atom1, int atom2, int atom3);
         double ooPlane_angle(int atom1, int atom2, int atom3, int atom4);
+        double torsion_angle(int atom1, int atom2, int atom3, int atom4);
  
         // Construct and destruct
         Molecule(const char *filename);

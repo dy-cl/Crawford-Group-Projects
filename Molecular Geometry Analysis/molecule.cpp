@@ -75,6 +75,38 @@ double Molecule::ooPlane_angle(int i, int j, int k, int l) {
     return (180 / acos(-1.0)) * asin(sin_theta);
 }
 
+// Calculate torsional angle in degrees
+double Molecule::torsion_angle(int i, int j, int k, int l) {
+
+    double eXijk, eYijk, eZijk;
+    double eXjkl, eYjkl, eZjkl;
+
+    // Get X, Y, Z components of both cross products
+    tie(eXijk, eYijk, eZijk) = cross_product(i, j, k);
+    tie(eXjkl, eYjkl, eZjkl) = cross_product(j, k, l);
+
+    // Calculate dot product of cross products
+    double dot_product1 = (eXijk * eXjkl) + (eYijk * eYjkl) + (eZijk * eZjkl);
+
+    // Denominator
+    double dot_product2 = sqrt((eXijk * eXijk) + (eYijk * eYijk) + (eZijk * eZijk)) * sqrt((eXjkl * eXjkl) + (eYjkl * eYjkl) + (eZjkl * eZjkl));
+
+    // Calculate cos_tau in radians
+    double cos_tau = dot_product1 / dot_product2;
+
+    // cout << "Cos tau: " << cos_tau << "\n";
+
+    if (cos_tau < -1.0) {
+        cos_tau = -1.0;
+    } else if (cos_tau > 1.0) {
+        cos_tau = 1.0;
+    } else {
+        cos_tau = cos_tau;
+    }
+
+    return (180 / acos(-1.0)) * acos(cos_tau);
+}
+
 // Constructor
 Molecule::Molecule(const char *filename) { 
 
