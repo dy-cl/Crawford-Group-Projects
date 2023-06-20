@@ -6,6 +6,8 @@
 #include <cassert>
 #include <cmath>
 
+using namespace std;
+
 // Function to print geometry (cartesian coordinates)
 void Molecule::print_geometry(){
     for (int i = 0; i < num_atoms; i++) {
@@ -105,6 +107,28 @@ double Molecule::torsion_angle(int i, int j, int k, int l) {
     }
 
     return (180 / acos(-1.0)) * acos(cos_tau);
+}
+
+tuple<double, double, double, double> Molecule::cofMass(int atom, int i) {
+    double masses[] = {
+        0.000000, // Placeholder 0
+        1.007825, // Hydrogen 1
+        0.000000, // Placeholder 2
+        0.000000, // Placeholder 3
+        0.000000, // Placeholder 4
+        0.000000, // Placeholder 5
+        12.0096,  // Carbon 6
+        0.000000, // Placeholder 7
+        15.99903, // Oxygen 8
+    };
+
+    double mi = masses[atom];
+
+    double Xi = geometry[i][0];
+    double Yi = geometry[i][1];
+    double Zi = geometry[i][2];
+
+    return make_tuple(mi, Xi, Yi, Zi);
 }
 
 // Constructor

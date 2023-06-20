@@ -19,6 +19,7 @@ class Molecule
         double bond_angle(int atom1, int atom2, int atom3);
         double ooPlane_angle(int atom1, int atom2, int atom3, int atom4);
         double torsion_angle(int atom1, int atom2, int atom3, int atom4);
+        tuple<double, double, double, double> cofMass(int atom, int atom1);
  
         // Construct and destruct
         Molecule(const char *filename);

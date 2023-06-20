@@ -1,6 +1,7 @@
 #include "molecule.hpp" // Use molecule class
 #include <iostream>
 #include <cmath>
+#include <tuple>
  
 using namespace std;
  
@@ -65,6 +66,33 @@ int main(int argc, char *argv[]){
         }
     }
     
-    
+    // Print centre of mass
+    double total_mass = 0.0;
+
+    double Xcm = 0.0;
+    double Ycm = 0.0;
+    double Zcm = 0.0;
+
+    for (int i = 0; i < mol.num_atoms; i++){
+        tuple<double, double, double, double> result = mol.cofMass(mol.atom[i], i);
+
+        double mi, Xi, Yi, Zi;
+        tie(mi, Xi, Yi, Zi) = result;
+
+        total_mass += mi;
+
+        Xcm += (mi * Xi);
+        Ycm += (mi * Yi);
+        Zcm += (mi * Zi);
+    }
+
+    Xcm = Xcm / total_mass;
+    Ycm = Ycm / total_mass;
+    Zcm = Zcm / total_mass;
+
+    cout << "Centre of mass coordinates: \n";
+
+    printf("%10.6f %10.6f %10.6f\n", Xcm, Ycm, Zcm);
+
     return 0;
 } 
