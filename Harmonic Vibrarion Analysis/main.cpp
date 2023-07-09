@@ -10,12 +10,14 @@ using namespace std;
 int main(int argc, char *argv[]){
 
     // Create instance of molecule class with data file
-    Molecule mol("h2o_geom.txt");
-    
-    cout << "Num Atoms: " << mol.num_atoms << "\n";
+    Molecule geom_mol("h2o_geom.txt");
+    Molecule hessian_mol("h2o_hessian.txt");
 
-    // Print geometry 
-    mol.print_geometry();
+    cout << "Molecular Geometry:" << "\n";
+    cout << "Num Atoms: " << geom_mol.num_atoms << "\n";
+
+    geom_mol.print_geometry();
+    hessian_mol.print_hessian();
 
     return 0;
 }

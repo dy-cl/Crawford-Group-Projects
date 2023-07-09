@@ -12,9 +12,11 @@ class Molecule
         int num_atoms;
         double *atom;
         double **geometry;
+        double ** hessian;
 
         // Define functions
         void print_geometry();
+        void print_hessian();
 
         // Construct and destruct
         Molecule(const char *filename);
