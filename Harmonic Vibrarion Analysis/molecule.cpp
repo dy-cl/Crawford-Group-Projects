@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cassert>
 #include <cmath>
+#include "eigen-3.4.0/Eigen/Dense"
 
 using namespace std;
 
@@ -72,6 +73,56 @@ void Molecule::weight_hessian() {
             cout << "\n";
         }
         cout << "\n";
+}
+
+// Function to diagonalize hessian
+void Molecule::diagonalize_hessian() {
+
+    // Atomic masses for oxygen and hydrogen
+    const double oxygen_mass = 15.9994;
+    const double hydrogen_mass = 1.00784;
+
+    double i_mass;
+    double j_mass;
+
+    // Create a mass-weighted Hessian matrix copy
+    Eigen::MatrixXd mass_weighted_hessian(3 * num_atoms, 3 * num_atoms);
+    for (int i = 0; i < 3 * num_atoms; i++) {
+        for (int j = 0; j < 3 * num_atoms; j++) {
+            
+                // Get the corresponding atomic masses for atom i
+                if (atom[i / 3] == 8) {
+                    i_mass = oxygen_mass;
+                } else if (atom[i / 3] == 1) {
+                    i_mass = hydrogen_mass;
+                }
+
+                // Get the corresponding atomic masses for atom i
+                if (atom[j / 3] == 8) {
+                    j_mass = oxygen_mass;
+                } else if (atom[j / 3] == 1) {
+                    j_mass = hydrogen_mass;
+                }
+
+                // Calculate weighted hessian value
+                mass_weighted_hessian(i, j) = hessian[i][j] / sqrt(i_mass * j_mass);
+    
+        }
+    }
+
+    // Use Eigen library to compute eigenvalues and eigenvectors
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(mass_weighted_hessian);
+
+    // Extract eigenvalues and eigenvectors
+    Eigen::VectorXd eigenvalues = eigensolver.eigenvalues();
+
+    // Print eigenvalues
+    cout << "Eigenvalues: " << "\n";
+    for (int i = 0; i < eigenvalues.size(); i++) {
+        cout << fixed << setprecision(6) << eigenvalues(i) << "\n";
+    }
+
+    
 }
 
 // Constructor with both geometry and hessian filenames
@@ -141,6 +192,8 @@ Molecule::Molecule(const char* geom_filename, const char* hess_filename) {
 
 // Destructor
 Molecule::~Molecule() {
+
+    cout << "\n";
     cout << "Beginning deallocation" << "\n";
 
     // Deallocate memory for atom data

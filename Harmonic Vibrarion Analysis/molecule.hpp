@@ -18,6 +18,7 @@ class Molecule
         void print_geometry();
         void print_hessian();
         void weight_hessian();
+        void diagonalize_hessian();
 
         // Construct and destruct
         Molecule(const char* geom_filename, const char* hess_filename);

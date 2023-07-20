@@ -18,6 +18,7 @@ int main(int argc, char *argv[]){
     mol.print_geometry();
     mol.print_hessian();
     mol.weight_hessian();
+    mol.diagonalize_hessian();
 
     return 0;
 }
