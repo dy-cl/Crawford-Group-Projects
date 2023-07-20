@@ -29,96 +29,141 @@ void Molecule::print_hessian() {
             }
             cout << "\n";
         }
+        cout << "\n";
 }
 
-// Constructor
-Molecule::Molecule(const char *filename) { 
+// Function to mass weight Hessian
+void Molecule::weight_hessian() {
 
-    // Open file and check for success
-    ifstream input(filename); 
-    if (!input) {
-        cerr << "Error opening file: " << filename << endl;
-        // Perform error handling or return an error code if necessary
-        return;
+    // Atomic masses for oxygen and hydrogen
+    const double oxygen_mass = 15.9994;
+    const double hydrogen_mass = 1.00784;
+
+    double i_mass;
+    double j_mass;
+  
+    for (int i = 0; i < 3 * num_atoms; i++) {
+            for (int j = 0; j < 3 * num_atoms; j++) {
+
+                // Get the corresponding atomic masses for atom i
+                if (atom[i / 3] == 8) {
+                    i_mass = oxygen_mass;
+                } else if (atom[i / 3] == 1) {
+                    i_mass = hydrogen_mass;
+                }
+
+                // Get the corresponding atomic masses for atom i
+                if (atom[j / 3] == 8) {
+                    j_mass = oxygen_mass;
+                } else if (atom[j / 3] == 1) {
+                    j_mass = hydrogen_mass;
+                }
+
+                // Calculate weighted hessian value
+                hessian[i][j] /= sqrt(i_mass * j_mass);
+            }
     }
 
-    string fileExtension = filename;
-
-    if (fileExtension.find("geom.txt") != string::npos) {
-        // Read number of atoms
-        input >> num_atoms;
-
-        // Allocate memory for arrays
-        atom = new double[num_atoms];
-        cout << "Atom memory allocated" << "\n";
-
-        geometry = new double*[num_atoms];
-        cout << "Geometry memory allocated" << "\n";
-        
-        for (int i = 0; i < num_atoms; i++) {
-            geometry[i] = new double[3];
-        }
-
-        // Read geometry from file
-        for (int i = 0; i < num_atoms; i++) {
-            input >> atom[i] >> geometry[i][0] >> geometry[i][1] >> geometry[i][2];
-        }
-
-    } else if (fileExtension.find("hessian.txt") != string::npos) {
-
-        input >> num_atoms;
-
-        // Read Hessian matrix from file
-        hessian = new double*[3 * num_atoms];
-        cout << "Hessian memory allocated" << "\n";
-        cout << "\n";
-
-        for (int i = 0; i < 3 * num_atoms; i++) {
-            hessian[i] = new double[3 * num_atoms];
-        }
-
+    cout << "Weighted Hessian Matrix:" << endl;
         for (int i = 0; i < 3 * num_atoms; i++) {
             for (int j = 0; j < 3 * num_atoms; j++) {
-                input >> hessian[i][j];
+                printf("%12.6f ", hessian[i][j]);
             }
-        }  
+            cout << "\n";
+        }
+        cout << "\n";
+}
 
-    } else {
-        cerr << "Invalid file extension: " << fileExtension << endl;
+// Constructor with both geometry and hessian filenames
+Molecule::Molecule(const char* geom_filename, const char* hess_filename) {
+    // Open geometry file and check for success
+    ifstream geom_input(geom_filename);
+    if (!geom_input) {
+        cerr << "Error opening geometry file: " << geom_filename << endl;
         // Perform error handling or return an error code if necessary
         return;
     }
-    
-    input.close();
 
+    // Read number of atoms
+    geom_input >> num_atoms;
+
+    // Allocate memory for arrays
+    atom = new double[num_atoms];
+    geometry = new double*[num_atoms];
+    for (int i = 0; i < num_atoms; i++) {
+        geometry[i] = new double[3];
+    }
+
+    // Read geometry from file
+    for (int i = 0; i < num_atoms; i++) {
+        geom_input >> atom[i] >> geometry[i][0] >> geometry[i][1] >> geometry[i][2];
+    }
+
+    // Close the geometry file
+    geom_input.close();
+
+    // Open hessian file and check for success
+    ifstream hess_input(hess_filename);
+    if (!hess_input) {
+        // Perform error handling or return an error code if necessary
+        cerr << "Error opening hessian file: " << hess_filename << endl;
+
+        // Clean up the memory allocated for geometry data
+        delete[] atom;
+        for (int i = 0; i < num_atoms; i++) {
+            delete[] geometry[i];
+        }
+        delete[] geometry;
+
+        return;
+    }
+
+    // Skip the first line in the hessian file (header line)
+    string header_line;
+    getline(hess_input, header_line);
+
+    // Allocate memory for the hessian array
+    hessian = new double*[3 * num_atoms];
+    for (int i = 0; i < 3 * num_atoms; i++) {
+        hessian[i] = new double[3 * num_atoms];
+    }
+
+    // Read hessian from file
+    for (int i = 0; i < 3 * num_atoms; i++) {
+        for (int j = 0; j < 3 * num_atoms; j++) {
+            hess_input >> hessian[i][j];
+        }
+    }
+
+    // Close the hessian file
+    hess_input.close();
 }
 
+// Destructor
 Molecule::~Molecule() {
     cout << "Beginning deallocation" << "\n";
 
+    // Deallocate memory for atom data
     if (atom != nullptr) {
-        cout << "Beginning deallocation of atom" << "\n";
         delete[] atom;
         cout << "Atom deleted" << "\n";
     } else {
         cout << "Atom pointer is null" << "\n";
     }
 
+    // Deallocate memory for geometry data
     if (geometry != nullptr) {
-        cout << "Beginning deallocation of geometry" << "\n";
         for (int i = 0; i < num_atoms; i++) {
             delete[] geometry[i];
-            cout << "Geometry " << i << "deleted" << "\n";
         }
         delete[] geometry;
         cout << "Geometry deleted" << "\n";
     }
 
+    // Deallocate memory for hessian data
     if (hessian != nullptr) {
-        cout << "Beginning deallocation of hessian" << "\n";
         for (int i = 0; i < 3 * num_atoms; i++) {
             delete[] hessian[i];
-            cout << "Hessian " << i << "deleted" << "\n"; 
         }
         delete[] hessian;
         cout << "Hessian deleted" << "\n";
