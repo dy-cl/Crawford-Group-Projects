@@ -8,7 +8,10 @@
 #include <cassert>
 #include <cmath>
 #include "eigen-3.4.0/Eigen/Dense"
+#include "eigen-3.4.0/Eigen/Eigenvalues"
+#include "eigen-3.4.0/Eigen/Core"
 
+typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> Matrix;
 using namespace std;
 
 // Function to print geometry (cartesian coordinates)
@@ -16,7 +19,7 @@ void Molecule::print_geometry(){
     for (int i = 0; i < num_atoms; i++) {
 
         // Specify output width and precision
-        printf("%8.5f %8.5f %8.5f %8.5f\n", atom[i], geometry[i][0], geometry[i][1], geometry[i][2]);
+        printf("%16.12f %16.12f %16.12f %16.12f\n", atom[i], geometry[i][0], geometry[i][1], geometry[i][2]);
     }     
     cout << "\n"; 
 }
@@ -26,7 +29,7 @@ void Molecule::print_hessian() {
     cout << "Hessian Matrix:" << endl;
         for (int i = 0; i < 3 * num_atoms; i++) {
             for (int j = 0; j < 3 * num_atoms; j++) {
-                printf("%12.6f ", hessian[i][j]);
+                printf("%16.12f ", hessian[i][j]);
             }
             cout << "\n";
         }
@@ -37,8 +40,8 @@ void Molecule::print_hessian() {
 void Molecule::weight_hessian() {
 
     // Atomic masses for oxygen and hydrogen
-    const double oxygen_mass = 15.9994;
-    const double hydrogen_mass = 1.00784;
+    const double oxygen_mass = 15.994914619;
+    const double hydrogen_mass = 1.0078250322;
 
     double i_mass;
     double j_mass;
@@ -61,14 +64,15 @@ void Molecule::weight_hessian() {
                 }
 
                 // Calculate weighted hessian value
-                hessian[i][j] /= sqrt(i_mass * j_mass);
+                mass_weighted_hessian[i][j] = hessian[i][j] / sqrt(i_mass * j_mass);
             }
     }
+
 
     cout << "Weighted Hessian Matrix:" << endl;
         for (int i = 0; i < 3 * num_atoms; i++) {
             for (int j = 0; j < 3 * num_atoms; j++) {
-                printf("%12.6f ", hessian[i][j]);
+                printf("%16.12f ", mass_weighted_hessian[i][j]);
             }
             cout << "\n";
         }
@@ -79,14 +83,14 @@ void Molecule::weight_hessian() {
 void Molecule::diagonalize_hessian() {
 
     // Atomic masses for oxygen and hydrogen
-    const double oxygen_mass = 15.9994;
-    const double hydrogen_mass = 1.00784;
+    const double oxygen_mass = 15.994914619;
+    const double hydrogen_mass = 1.0078250322;
 
     double i_mass;
     double j_mass;
 
-    // Create a mass-weighted Hessian matrix copy
-    Eigen::MatrixXd mass_weighted_hessian(3 * num_atoms, 3 * num_atoms);
+    // Create a mass-weighted Hessian matrix copy in Eigen format
+    Matrix mass_weighted_hessian(3 * num_atoms, 3 * num_atoms);
     for (int i = 0; i < 3 * num_atoms; i++) {
         for (int j = 0; j < 3 * num_atoms; j++) {
             
@@ -105,24 +109,42 @@ void Molecule::diagonalize_hessian() {
                 }
 
                 // Calculate weighted hessian value
-                mass_weighted_hessian(i, j) = hessian[i][j] / sqrt(i_mass * j_mass);
-    
+                mass_weighted_hessian(i, j) = hessian[i][j] / sqrt(i_mass * j_mass);    
         }
     }
 
     // Use Eigen library to compute eigenvalues and eigenvectors
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(mass_weighted_hessian);
+    Eigen::SelfAdjointEigenSolver<Matrix> eigensolver(mass_weighted_hessian);
 
     // Extract eigenvalues and eigenvectors
     Eigen::VectorXd eigenvalues = eigensolver.eigenvalues();
 
     // Print eigenvalues
-    cout << "Eigenvalues: " << "\n";
-    for (int i = 0; i < eigenvalues.size(); i++) {
-        cout << fixed << setprecision(6) << eigenvalues(i) << "\n";
+    cout << "Eigenvalues:" << "\n";
+    for (int i = eigenvalues.size() - 1; i >= 0; i--) {
+        cout << i << ": ";
+        printf("%16.12f", eigenvalues[i]);
+        cout << "\n";
     }
 
-    
+    // Convert eigen values to vibrational frequencies
+    double conversion_factor = 5140.484532;
+    frequencies = conversion_factor * eigenvalues.cwiseSqrt();
+
+    cout << "\n";
+
+    // Print vibrational frequncies
+    cout << "Vibrational Frequencies: " << "\n";
+    for (int i = frequencies.size() - 1; i >= 0; i--) {
+        if (std::isnan(frequencies(i))) {
+            cout << i << ": ";
+            printf("%16.12f\n", 0.0); // Print zero for NaN values
+        } else {
+            cout << i << ": ";
+            printf("%16.12f\n", frequencies(i));
+        }
+    }
+
 }
 
 // Constructor with both geometry and hessian filenames
@@ -179,6 +201,22 @@ Molecule::Molecule(const char* geom_filename, const char* hess_filename) {
         hessian[i] = new double[3 * num_atoms];
     }
 
+    // Allocate memory for the mass_weighted_hessian array
+    mass_weighted_hessian = new double*[3 * num_atoms];
+    for (int i = 0; i < 3 * num_atoms; i++) {
+        mass_weighted_hessian[i] = new double[3 * num_atoms];
+    }
+
+    // Initialize the mass_weighted_hessian to zero
+    for (int i = 0; i < 3 * num_atoms; i++) {
+        for (int j = 0; j < 3 * num_atoms; j++) {
+            mass_weighted_hessian[i][j] = 0.0;
+        }
+    }
+
+    //Allocate memory for vibrational frequencies
+    frequencies.resize(3 * num_atoms);
+    
     // Read hessian from file
     for (int i = 0; i < 3 * num_atoms; i++) {
         for (int j = 0; j < 3 * num_atoms; j++) {
@@ -188,20 +226,16 @@ Molecule::Molecule(const char* geom_filename, const char* hess_filename) {
 
     // Close the hessian file
     hess_input.close();
+
+    
 }
 
 // Destructor
 Molecule::~Molecule() {
 
-    cout << "\n";
-    cout << "Beginning deallocation" << "\n";
-
     // Deallocate memory for atom data
     if (atom != nullptr) {
         delete[] atom;
-        cout << "Atom deleted" << "\n";
-    } else {
-        cout << "Atom pointer is null" << "\n";
     }
 
     // Deallocate memory for geometry data
@@ -210,7 +244,6 @@ Molecule::~Molecule() {
             delete[] geometry[i];
         }
         delete[] geometry;
-        cout << "Geometry deleted" << "\n";
     }
 
     // Deallocate memory for hessian data
@@ -219,6 +252,13 @@ Molecule::~Molecule() {
             delete[] hessian[i];
         }
         delete[] hessian;
-        cout << "Hessian deleted" << "\n";
+    }
+
+    // Deallocate memory for mass_weighted_hessian data
+    if (mass_weighted_hessian != nullptr) {
+        for (int i = 0; i < 3 * num_atoms; i++) {
+            delete[] mass_weighted_hessian[i];
+        }
+        delete[] mass_weighted_hessian;
     }
 }

@@ -1,6 +1,7 @@
 //molecule.hpp
 
 #include <string>
+#include "eigen-3.4.0/Eigen/Dense"
 
 using namespace std;
 
@@ -13,6 +14,8 @@ class Molecule
         double *atom;
         double **geometry;
         double ** hessian;
+        double ** mass_weighted_hessian;
+        Eigen::VectorXd frequencies;
 
         // Define functions
         void print_geometry();
